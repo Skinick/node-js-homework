@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { User } = require("../../models");
 const { HttpError } = require("../../helpers");
-const { SECRET_KEY } = process.env;
+const { JWT_SECRET } = process.env;
 
 const login = async (req, res) => {
   const { email, password } = req.body;
@@ -16,10 +16,14 @@ const login = async (req, res) => {
     id: user._id,
   };
 
-  const token = jwt.sign(payload, SECRET_KEY, { expiresIn: "1h" });
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "23h" });
 
   res.json({
     token,
+    user: {
+      email: user.email,
+      subscription: user.subscription,
+    },
   });
 };
 
