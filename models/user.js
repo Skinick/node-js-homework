@@ -1,66 +1,48 @@
-const { Schema, model } = require("mongoose");
-const Joi = require("joi");
-const bcrypt = require("bcryptjs");
-const { handleMongooseError } = require("../utils");
+import {Schema, model} from "mongoose";
+import Joi from "joi";
+
+import { handleSaveError, runValidatorsAtUpdate } from "./hooks.js";
 
 const emailRegexp = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
-const userSchema = new Schema(
-  {
-    password: {
-      type: String,
-      minlength: 6,
-      required: [true, "Password is required"],
+const userSchema = new Schema({
+    username: {
+        type: String,
+        required: true,
     },
     email: {
-      type: String,
-      match: emailRegexp,
-      required: [true, "Email is required"],
-      unique: true,
+        type: String,
+        match: emailRegexp,
+        unique: true,
+        required: true,
     },
-    subscription: {
-      type: String,
-      enum: ["starter", "pro", "business"],
-      default: "starter",
+    password: {
+        type: String,
+        minlength: 6,
+        required: true,
     },
     token: {
-      type: String,
-      default: null,
-    },
-    avatarURL: {
-      type: String,
-      required: true,
-    },
-  },
-  { versionKey: false, timestamps: true }
-);
+        type: String,
+    }
+}, {versionKey: false, timestamps: true})
 
-userSchema.post("save", handleMongooseError);
+userSchema.post("save", handleSaveError);
 
-const registerSchema = Joi.object({
-  email: Joi.string().pattern(emailRegexp).required(),
-  password: Joi.string().min(6).required(),
-  subscription: Joi.string().required(),
-});
+userSchema.pre("findOneAndUpdate", runValidatorsAtUpdate);
 
-const loginSchema = Joi.object({
-  email: Joi.string().pattern(emailRegexp).required(),
-  password: Joi.string().min(6).required(),
-});
+userSchema.post("findOneAndUpdate", handleSaveError);
 
-const updateSubSchema = Joi.object({
-  subscription: Joi.any().valid("starter", "pro", "business"),
-});
+export const userSignupSchema = Joi.object({
+    username: Joi.string().required(),
+    email: Joi.string().pattern(emailRegexp).required(),
+    password: Joi.string().min(6).required(),
+})
 
-const schemas = {
-  registerSchema,
-  loginSchema,
-  updateSubSchema,
-};
+export const userSigninSchema = Joi.object({
+    email: Joi.string().pattern(emailRegexp).required(),
+    password: Joi.string().min(6).required(),
+})
 
 const User = model("user", userSchema);
 
-module.exports = {
-  User,
-  schemas,
-};
+export default User;

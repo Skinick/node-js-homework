@@ -1,66 +1,61 @@
-const { Schema, model } = require("mongoose");
-const Joi = require("joi");
-const { handleMongooseError } = require("../utils");
+import {Schema, model} from "mongoose";
+import Joi from "joi";
 
-const contactSchema = new Schema(
-  {
+import { handleSaveError, runValidatorsAtUpdate } from "./hooks.js";
+
+
+const contactSchema = new Schema({
     name: {
-      type: String,
-      required: [true, "Set name for contact"],
-    },
-    email: {
-      type: String,
-    },
-    phone: {
-      type: String,
-    },
+        type: String,
+        required: [true, "Set name for contact"],
+      },
+      email: {
+        type: String,
+      },
+      phone: {
+        type: String,
+      },
     favorite: {
-      type: Boolean,
-      default: false,
+        type: Boolean,
+        default: false,
     },
+    
+
     owner: {
-      type: Schema.Types.ObjectId,
-      ref: "user",
-      required: true,
-    },
-  },
-  { versionKey: false, timestamps: true }
-);
+        type: Schema.Types.ObjectId,
+        ref: "user",
+        required: true,
+    }
+}, {versionKey: false, timestamps: true})
 
-contactSchema.post("save", handleMongooseError);
+contactSchema.post("save", handleSaveError);
 
-const addSchema = Joi.object({
-  name: Joi.string().required().messages({
-    "any.required": `"name" is required`,
-    "string.empty": `"name" cannot be empty`,
-    "string.base": `"name" must be string`,
-  }),
-  email: Joi.string().required().messages({
-    "any.required": `"email" is required`,
-    "string.empty": `"email" cannot be empty`,
-  }),
-  phone: Joi.string().required().messages({
-    "any.required": `"phone" is required`,
-    "string.empty": `"phone" cannot be empty`,
-  }),
-  favorite: Joi.boolean(),
-});
+contactSchema.pre("findOneAndUpdate", runValidatorsAtUpdate);
 
-const updateStatusSchema = Joi.object({
-  favorite: Joi.boolean().required().messages({
-    "any.required": `missing field favorite`,
-    "string.empty": `"favorite" cannot be empty`,
-  }),
-});
+contactSchema.post("findOneAndUpdate", handleSaveError);
 
-const schemas = {
-  addSchema,
-  updateStatusSchema,
-};
+export const contactAddSchema = Joi.object({
+    name: Joi.string().required().messages({
+        "any.required": `"name" is required`,
+        "string.empty": `"name" cannot be empty`,
+        "string.base": `"name" must be string`,
+      }),
+      email: Joi.string().required().messages({
+        "any.required": `"email" is required`,
+        "string.empty": `"email" cannot be empty`,
+      }),
+      phone: Joi.string().required().messages({
+        "any.required": `"phone" is required`,
+        "string.empty": `"phone" cannot be empty`,
+      }),
+    favorite: Joi.boolean(),
+    
+})
+
+export const contactUpdateFavoriteSchema = Joi.object({
+    favorite: Joi.boolean().required(),
+})
 
 const Contact = model("contact", contactSchema);
 
-module.exports = {
-  Contact,
-  schemas,
-};
+export default Contact;
