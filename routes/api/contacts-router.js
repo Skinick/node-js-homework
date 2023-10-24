@@ -4,20 +4,22 @@ import contactsController from "../../controllers/contacts-controller.js";
 
 import {
   authenticate,
-  upload,
   isEmptyBody,
   isValidId,
+  upload,
 } from "../../middlewares/index.js";
 
 import { validateBody } from "../../decorators/index.js";
 
 import {
   contactAddSchema,
-  contactUpdateFavoriteSchema,
+  contactUpdateSchema,
+  updateFavoriteSchema,
 } from "../../models/Contact.js";
 
 const contactAddValidate = validateBody(contactAddSchema);
-const contactUpdateFavoriteValidate = validateBody(contactUpdateFavoriteSchema);
+const contactUpdateValidate = validateBody(contactUpdateSchema);
+const contactUpdateFavoriteValidate = validateBody(updateFavoriteSchema);
 
 const contactsRouter = express.Router();
 
@@ -27,8 +29,6 @@ contactsRouter.get("/", contactsController.getAll);
 
 contactsRouter.get("/:id", isValidId, contactsController.getById);
 
-// upload.fields([{name: "avatar", maxCount: 1}])
-// upload.array("avatar", 8)
 contactsRouter.post(
   "/",
   upload.single("avatar"),
@@ -41,7 +41,7 @@ contactsRouter.put(
   "/:id",
   isValidId,
   isEmptyBody,
-  contactAddValidate,
+  contactUpdateValidate,
   contactsController.updateById
 );
 
