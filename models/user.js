@@ -1,62 +1,61 @@
-const { Schema, model } = require("mongoose");
-const Joi = require("joi");
-const bcrypt = require("bcryptjs");
-const { handleMongooseError } = require("../utils");
+import { Schema, model } from "mongoose";
+import Joi from "joi";
+import { handleSaveError, runValidatorsAtUpdate } from "./hooks.js";
 
+const subscriptionList = ["starter", "pro", "business"];
 const emailRegexp = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
 const userSchema = new Schema(
   {
-    password: {
+    username: {
       type: String,
-      minlength: 6,
-      required: [true, "Password is required"],
+      required: [true, "User name is required"],
     },
     email: {
       type: String,
-      match: emailRegexp,
       required: [true, "Email is required"],
+      match: emailRegexp,
       unique: true,
+    },
+    password: {
+      type: String,
+      minlength: 6,
+      required: [true, "Set password for user"],
     },
     subscription: {
       type: String,
-      enum: ["starter", "pro", "business"],
+      enum: subscriptionList,
       default: "starter",
     },
-    token: {
-      type: String,
-      default: null,
-    },
+    token: String,
+    avatarURL: String,
   },
   { versionKey: false, timestamps: true }
 );
 
-userSchema.post("save", handleMongooseError);
+userSchema.post("save", handleSaveError);
 
-const registerSchema = Joi.object({
+userSchema.pre("findOneAndUpdate", runValidatorsAtUpdate);
+
+userSchema.post("findOneAndUpdate", handleSaveError);
+
+export const userSignupSchema = Joi.object({
+  username: Joi.string().required(),
   email: Joi.string().pattern(emailRegexp).required(),
   password: Joi.string().min(6).required(),
-  subscription: Joi.string().required(),
+  subscription: Joi.string().valid(...subscriptionList),
 });
 
-const loginSchema = Joi.object({
+export const userSigninSchema = Joi.object({
   email: Joi.string().pattern(emailRegexp).required(),
   password: Joi.string().min(6).required(),
+  subscription: Joi.string().valid(...subscriptionList),
 });
 
-const updateSubSchema = Joi.object({
-  subscription: Joi.any().valid("starter", "pro", "business"),
+export const userUpdateSubscriptionSchema = Joi.object({
+  subscription: Joi.string().valid(...subscriptionList),
 });
-
-const schemas = {
-  registerSchema,
-  loginSchema,
-  updateSubSchema,
-};
 
 const User = model("user", userSchema);
 
-module.exports = {
-  User,
-  schemas,
-};
+export default User;
