@@ -5,14 +5,14 @@ import { validateBody } from "../../decorators/index.js";
 import {
   userSignupSchema,
   userSigninSchema,
+  userEmailSchema,
   userUpdateSubscriptionSchema,
 } from "../../models/User.js";
 
 const userSignupValidate = validateBody(userSignupSchema);
 const userSigninValidate = validateBody(userSigninSchema);
-const userUpdateSubscriptionValidate = validateBody(
-  userUpdateSubscriptionSchema
-);
+const userEmailValidate = validateBody(userEmailSchema);
+const userUpdateSubscriptionValidate = validateBody(userUpdateSubscriptionSchema);
 
 const authRouter = express.Router();
 
@@ -23,6 +23,10 @@ authRouter.post(
   userSignupValidate,
   authController.signup
 );
+
+authRouter.get("/verify/:verificationCode", authController.verify);
+
+authRouter.post("/verify", isEmptyBody, userEmailValidate, authController.resendVerifyEmail);
 
 authRouter.post(
   "/signin",
